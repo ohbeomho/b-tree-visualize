@@ -1,9 +1,12 @@
 import { BTree } from "./b-tree.js"
 
-const tree = new BTree(3)
+const tree = new BTree(4)
 for (let i = 0; i < 50; i++) {
     tree.insert(Math.floor(Math.random() * 100))
 }
+
+let offsetX = 0,
+    offsetY = 0
 
 const canvas = document.querySelector("canvas")
 const ctx = canvas.getContext("2d")
@@ -58,7 +61,7 @@ function drawNode(node, x, y) {
     if (!node.leaf) {
         // Calculate child positions based on subtree widths
         let currentX = x - getNodeWidth(node) / 2
-        const childY = y + 70
+        const childY = y + 100
 
         for (let i = 0; i < node.children.length; i++) {
             const childWidth = getNodeWidth(node.children[i])
@@ -81,11 +84,32 @@ function drawTree() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    drawNode(tree.root, canvas.width / 2, 50)
+    drawNode(tree.root, canvas.width / 2 + offsetX, 50 + offsetY)
 }
 
 window.addEventListener("resize", resizeCanvas)
 window.addEventListener("DOMContentLoaded", () => {
     resizeCanvas()
     drawTree()
+})
+
+let mouseX = null,
+    mouseY = null
+canvas.addEventListener("mousemove", (e) => {
+    if (e.buttons !== 1) {
+        mouseX = null
+        mouseY = null
+        return
+    }
+
+    if (mouseX !== null) {
+        const diffX = e.clientX - mouseX
+        const diffY = e.clientY - mouseY
+        offsetX += diffX
+        offsetY += diffY
+        drawTree()
+    }
+
+    mouseX = e.clientX
+    mouseY = e.clientY
 })
