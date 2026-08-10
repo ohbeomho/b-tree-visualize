@@ -21,12 +21,24 @@
             left: -9999px;
             top: -9999px;
         }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 999;
+        }
     </style>
 </head>
 
 <body>
 	<canvas></canvas>
     <span id="textWidth"></span>
+
+    <div class="controls">
+        <input type="number" name="key" id="keyInput" placeholder="Key">
+        <button id="insertButton">Insert</button>
+    </div>
 
 	<script src="index.js" type="module"></script>
 </body>
