@@ -8,6 +8,8 @@ class Node {
     constructor(leaf = true) {
         this.leaf = leaf
         this.keys = []
+        // Kept parallel to keys, including in internal nodes.
+        this.values = []
         this.children = []
         this.x = this.y = 0
     }
@@ -39,7 +41,17 @@ class BTree {
         return node.leaf ? null : this.search(key, node.children[index])
     }
 
-    insert(key) {
+    /** Returns the value associated with key, or undefined when absent. */
+    get(key) {
+        const found = this.search(key)
+        return found ? found[0].values[found[1]] : undefined
+    }
+
+    /**
+     * This b-tree is for visualization so value is optional.
+     * But this project is for learning so I implemented it with values.
+     */
+    insert(key, value = undefined) {
         if (this.search(key)) return false
 
         if (this.root.keys.length === this.maxKeys) {
@@ -49,7 +61,7 @@ class BTree {
             this.root = newRoot
         }
 
-        this.insertNonFull(this.root, key)
+        this.insertNonFull(this.root, key, value)
         return true
     }
 
@@ -71,22 +83,27 @@ class BTree {
         const child = parent.children[childIndex]
         const right = new Node(child.leaf)
         const middle = child.keys[this.t - 1]
+        const middleValue = child.values[this.t - 1]
 
         right.keys = child.keys.splice(this.t)
+        right.values = child.values.splice(this.t)
         child.keys.splice(this.t - 1)
+        child.values.splice(this.t - 1)
 
         if (!child.leaf) right.children = child.children.splice(this.t)
 
         parent.keys.splice(childIndex, 0, middle)
+        parent.values.splice(childIndex, 0, middleValue)
         parent.children.splice(childIndex + 1, 0, right)
     }
 
-    insertNonFull(node, key) {
+    insertNonFull(node, key, value) {
         let index = node.keys.length - 1
 
         if (node.leaf) {
             while (index >= 0 && key < node.keys[index]) index--
             node.keys.splice(index + 1, 0, key)
+            node.values.splice(index + 1, 0, value)
             return
         }
 
@@ -98,7 +115,7 @@ class BTree {
             if (key > node.keys[index]) index++
         }
 
-        this.insertNonFull(node.children[index], key)
+        this.insertNonFull(node.children[index], key, value)
     }
 
     removeFromNode(node, key) {
@@ -108,6 +125,7 @@ class BTree {
         if (index < node.keys.length && node.keys[index] === key) {
             if (node.leaf) {
                 node.keys.splice(index, 1)
+                node.values.splice(index, 1)
             } else {
                 this.removeFromInternalNode(node, index)
             }
@@ -127,13 +145,15 @@ class BTree {
         const right = node.children[index + 1]
 
         if (left.keys.length >= this.t) {
-            const predecessor = this.rightmostKey(left)
-            node.keys[index] = predecessor
-            this.removeFromNode(left, predecessor)
+            const predecessor = this.rightmostEntry(left)
+            node.keys[index] = predecessor.key
+            node.values[index] = predecessor.value
+            this.removeFromNode(left, predecessor.key)
         } else if (right.keys.length >= this.t) {
-            const successor = this.leftmostKey(right)
-            node.keys[index] = successor
-            this.removeFromNode(right, successor)
+            const successor = this.leftmostEntry(right)
+            node.keys[index] = successor.key
+            node.values[index] = successor.value
+            this.removeFromNode(right, successor.key)
         } else {
             this.mergeChildren(node, index)
             this.removeFromNode(left, key)
@@ -168,7 +188,9 @@ class BTree {
         const sibling = parent.children[index - 1]
 
         child.keys.unshift(parent.keys[index - 1])
+        child.values.unshift(parent.values[index - 1])
         parent.keys[index - 1] = sibling.keys.pop()
+        parent.values[index - 1] = sibling.values.pop()
         if (!child.leaf) child.children.unshift(sibling.children.pop())
     }
 
@@ -177,7 +199,9 @@ class BTree {
         const sibling = parent.children[index + 1]
 
         child.keys.push(parent.keys[index])
+        child.values.push(parent.values[index])
         parent.keys[index] = sibling.keys.shift()
+        parent.values[index] = sibling.values.shift()
         if (!child.leaf) child.children.push(sibling.children.shift())
     }
 
@@ -186,19 +210,22 @@ class BTree {
         const right = parent.children[index + 1]
 
         left.keys.push(parent.keys[index], ...right.keys)
+        left.values.push(parent.values[index], ...right.values)
         if (!left.leaf) left.children.push(...right.children)
         parent.keys.splice(index, 1)
+        parent.values.splice(index, 1)
         parent.children.splice(index + 1, 1)
     }
 
-    leftmostKey(node) {
+    leftmostEntry(node) {
         while (!node.leaf) node = node.children[0]
-        return node.keys[0]
+        return { key: node.keys[0], value: node.values[0] }
     }
 
-    rightmostKey(node) {
+    rightmostEntry(node) {
         while (!node.leaf) node = node.children[node.children.length - 1]
-        return node.keys[node.keys.length - 1]
+        const index = node.keys.length - 1
+        return { key: node.keys[index], value: node.values[index] }
     }
 }
 
