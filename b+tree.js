@@ -187,5 +187,3 @@ class BPlusTree {
         this.insertIntoParent(node, separator, right, path)
     }
 }
-
-export { BPlusTree, BPlusTreeNode }

@@ -1,6 +1,3 @@
-import { BTree } from "./b-tree.js"
-
-const tree = new BTree(4)
 const nodes = []
 
 function insertKey() {
@@ -56,6 +53,7 @@ function getNodeWidth(node) {
             totalWidth += NODE_SPACING // Add spacing between children
         }
     }
+
     return totalWidth
 }
 
@@ -101,6 +99,20 @@ function drawNode(node, x, y) {
     }
 }
 
+function drawLeafLinks() {
+    for (const node of nodes) {
+        if (node.leaf && node.next) {
+            ctx.beginPath()
+            ctx.moveTo(
+                node.x + node.keys.length * NODE_SIZE,
+                node.y + NODE_SIZE / 2,
+            )
+            ctx.lineTo(node.next.x, node.next.y + NODE_SIZE / 2)
+            ctx.stroke()
+        }
+    }
+}
+
 // Update nodes array
 function updateNodes() {
     nodes.splice(0, nodes.length)
@@ -121,6 +133,9 @@ function drawTree() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     drawNode(tree.root, canvas.width / 2 + offsetX, 50 + offsetY)
+    if (tree instanceof BPlusTree) {
+        drawLeafLinks()
+    }
 }
 
 function highlightKey(key) {

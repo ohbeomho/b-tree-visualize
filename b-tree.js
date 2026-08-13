@@ -228,5 +228,3 @@ class BTree {
         return { key: node.keys[index], value: node.values[index] }
     }
 }
-
-export { BTree, Node }
