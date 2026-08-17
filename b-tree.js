@@ -27,18 +27,20 @@ class BTree {
         this.root = new Node(true)
     }
 
-    /** Returns [node, keyIndex] when found, or null otherwise. */
-    search(key, node = this.root) {
+    /** Returns [node, keyIndex, path] when found, or null otherwise. */
+    search(key, node = this.root, path = []) {
         if (!node) return null
 
         let index = 0
         while (index < node.keys.length && key > node.keys[index]) index++
 
         if (index < node.keys.length && key === node.keys[index]) {
-            return [node, index]
+            return [node, index, path]
         }
 
-        return node.leaf ? null : this.search(key, node.children[index])
+        return node.leaf
+            ? null
+            : this.search(key, node.children[index], [...path, node])
     }
 
     /** Returns the value associated with key, or undefined when absent. */

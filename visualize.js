@@ -1,5 +1,7 @@
 const nodes = []
 
+// TODO: Persistent highlighting (keep highlighting even when mouse moves)
+
 function insertKey() {
     const key = keyInput.valueAsNumber
     if (isNaN(key)) return
@@ -14,6 +16,27 @@ function insertKey() {
     updateNodes()
 
     keyInput.value = ""
+}
+
+function searchKey() {
+    const key = keyInput.valueAsNumber
+    if (isNaN(key)) return
+
+    let result = tree.search(key)
+    if (!result) {
+        alert("Key not found")
+        return
+    }
+
+    const [node, idx, path] = result
+
+    highlightNode(node)
+    for (let i = 0; i < path.length; i++) highlightNode(path[i])
+    highlightKey(node, idx)
+}
+
+function rangeSearch(start, end) {
+    // TODO: Highlight all keys in the range (B+Tree)
 }
 
 let offsetX = 0,
@@ -133,24 +156,38 @@ function drawTree() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     drawNode(tree.root, canvas.width / 2 + offsetX, 50 + offsetY)
-    if (tree instanceof BPlusTree) {
+    if (typeof BPlusTree !== "undefined") {
         drawLeafLinks()
     }
 }
 
-function highlightKey(key) {
-    drawTree()
-    if (key === null) return
+function highlightKey(node, keyIdx) {
+    if (node === null) return
 
     ctx.strokeStyle = "red"
     ctx.lineWidth = 3
-    ctx.strokeRect(key.x, key.y, NODE_SIZE, NODE_SIZE)
+    ctx.strokeRect(node.x + keyIdx * NODE_SIZE, node.y, NODE_SIZE, NODE_SIZE)
+    ctx.strokeStyle = "black"
+    ctx.lineWidth = 1
+}
+
+function highlightNode(node) {
+    if (node === null) return
+
+    ctx.strokeStyle = "green"
+    ctx.lineWidth = 3
+    ctx.strokeRect(node.x, node.y, getNodeWidth(node), NODE_SIZE)
     ctx.strokeStyle = "black"
     ctx.lineWidth = 1
 }
 
 window.addEventListener("resize", resizeCanvas)
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
+    // for testing
+    for (let i = 0; i < 50; i++) {
+        tree.insert(Math.floor(Math.random() * 1000))
+    }
+
     resizeCanvas()
     drawTree()
     updateNodes()
@@ -192,13 +229,16 @@ canvas.addEventListener("mousemove", (e) => {
                 currY >= y &&
                 currY < y + NODE_SIZE
             ) {
-                hoveringKey = { x: x + i * NODE_SIZE, y: y, key: node.keys[i] }
+                hoveringKey = { node: node, keyIdx: i }
                 break
             }
         }
     }
 
-    highlightKey(hoveringKey)
+    if (hoveringKey) {
+        const { node, keyIdx } = hoveringKey
+        highlightKey(node, keyIdx)
+    } else highlightKey(null)
 
     if (!mousedown) {
         mouseX = null
@@ -219,9 +259,11 @@ canvas.addEventListener("mousemove", (e) => {
 })
 
 const insertButton = document.getElementById("insertButton")
+const searchButton = document.getElementById("searchButton")
 const keyInput = document.getElementById("keyInput")
 
 insertButton.addEventListener("click", insertKey)
+searchButton.addEventListener("click", searchKey)
 keyInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") insertKey()
 })

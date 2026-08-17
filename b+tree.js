@@ -33,9 +33,9 @@ class BPlusTree {
 
     /** Returns [leafNode, keyIndex] when found, or null otherwise. */
     search(key) {
-        const leaf = this.findLeaf(key)
+        const [leaf, path] = this.findLeaf(key)
         const index = this.lowerBound(leaf.keys, key)
-        return leaf.keys[index] === key ? [leaf, index] : null
+        return leaf.keys[index] === key ? [leaf, index, path] : null
     }
 
     has(key) {
@@ -74,7 +74,8 @@ class BPlusTree {
         if (from !== undefined && to !== undefined && from > to) return []
 
         const result = []
-        let leaf = from === undefined ? this.firstLeaf() : this.findLeaf(from)
+        let [leaf, path] =
+            from === undefined ? this.firstLeaf() : this.findLeaf(from)
         let index = from === undefined ? 0 : this.lowerBound(leaf.keys, from)
 
         while (leaf) {
@@ -83,10 +84,13 @@ class BPlusTree {
                 if (to !== undefined && key > to) return result
                 result.push(key)
             }
+
+            path.push(leaf)
             leaf = leaf.next
             index = 0
         }
-        return result
+
+        return [result, path]
     }
 
     /** Returns [key, value] pairs in ascending key order. */
@@ -94,7 +98,8 @@ class BPlusTree {
         if (from !== undefined && to !== undefined && from > to) return []
 
         const result = []
-        let leaf = from === undefined ? this.firstLeaf() : this.findLeaf(from)
+        let leaf =
+            from === undefined ? this.firstLeaf()[0] : this.findLeaf(from)[0]
         let index = from === undefined ? 0 : this.lowerBound(leaf.keys, from)
         while (leaf) {
             for (; index < leaf.keys.length; index++) {
@@ -124,14 +129,22 @@ class BPlusTree {
 
     findLeaf(key) {
         let node = this.root
-        while (!node.leaf) node = node.children[this.childIndex(node, key)]
-        return node
+        const path = []
+        while (!node.leaf) {
+            path.push(node)
+            node = node.children[this.childIndex(node, key)]
+        }
+        return [node, path]
     }
 
     firstLeaf() {
         let node = this.root
-        while (!node.leaf) node = node.children[0]
-        return node
+        const path = []
+        while (!node.leaf) {
+            path.push(node)
+            node = node.children[0]
+        }
+        return [node, path]
     }
 
     childIndex(node, key) {
