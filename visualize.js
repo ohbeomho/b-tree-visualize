@@ -13,8 +13,8 @@ function insertKey() {
 	}
 
 	clearHighlight()
-	drawTree()
 	updateNodes()
+	drawTree()
 
 	keyInput.value = ""
 }
@@ -43,8 +43,20 @@ function clearSearch() {
 	drawTree()
 }
 
-function rangeSearch(start, end) {
-	// TODO: Highlight all keys in the range (B+Tree)
+function rangeSearch() {
+	const start = rangeStartInput.valueAsNumber
+	const end = rangeEndInput.valueAsNumber
+
+	if (isNaN(start) || isNaN(end)) return
+
+	const [keys, path] = tree.range(start, end)
+
+	clearHighlight()
+
+	highlightedKeys.push(...keys)
+	highlightedNodes.push(...path)
+
+	drawTree()
 }
 
 let offsetX = 0,
@@ -185,16 +197,6 @@ function drawTree() {
 		ctx.strokeRect(node.x, node.y, getNodeWidth(node), NODE_SIZE)
 
 		if (!nextNode) continue
-
-		// Highlight the line connecting the current node to the next node
-		const nextNodeIdx = node.children.indexOf(nextNode)
-
-		ctx.beginPath()
-		ctx.moveTo(node.x + nextNodeIdx * NODE_SIZE, node.y + NODE_SIZE)
-		ctx.lineTo(nextNode.x + getNodeWidth(nextNode) / 2, nextNode.y)
-		ctx.stroke()
-
-		ctx.strokeStyle = "black"
 	}
 
 	ctx.lineWidth = 3
@@ -240,9 +242,8 @@ window.addEventListener("load", () => {
 		tree.insert(Math.floor(Math.random() * 1000))
 	}
 
-	resizeCanvas()
-	drawTree()
 	updateNodes()
+	resizeCanvas()
 })
 
 let mouseX = null,
@@ -255,8 +256,8 @@ canvas.addEventListener("mousedown", (e) => {
 	else if (e.button === 2 && hoveringKey !== null) {
 		tree.remove(hoveringKey.node.keys[hoveringKey.keyIdx])
 		hoveringKey = null
-		drawTree()
 		updateNodes()
+		drawTree()
 	}
 })
 canvas.addEventListener("mouseup", (e) => {
@@ -311,11 +312,15 @@ canvas.addEventListener("mousemove", (e) => {
 const insertButton = document.getElementById("insertButton")
 const searchButton = document.getElementById("searchButton")
 const clearSearchButton = document.getElementById("clearSearch")
+const rangeSearchButton = document.getElementById("rangeSearchButton")
+const rangeStartInput = document.getElementById("rangeStartInput")
+const rangeEndInput = document.getElementById("rangeEndInput")
 const keyInput = document.getElementById("keyInput")
 
 insertButton.addEventListener("click", insertKey)
-searchButton.addEventListener("click", searchKey)
+searchButton?.addEventListener("click", searchKey)
 clearSearchButton.addEventListener("click", clearSearch)
+rangeSearchButton?.addEventListener("click", rangeSearch)
 keyInput.addEventListener("keydown", (e) => {
 	if (e.key === "Enter") insertKey()
 })
